@@ -398,12 +398,33 @@ class HbuUrpGateway implements EduSystemGateway {
     return const <GradeItem>[];
   }
 
+  /// 历年学期时序比较方法（学年正序，同一年中秋季早于春季）
+  static int compareSemestersChronologically(String a, String b) {
+    final reg = RegExp(r'(\d{4})-\d{4}');
+    final matchA = reg.firstMatch(a);
+    final matchB = reg.firstMatch(b);
+    final yearA = matchA != null ? int.tryParse(matchA.group(1)!) ?? 0 : 0;
+    final yearB = matchB != null ? int.tryParse(matchB.group(1)!) ?? 0 : 0;
+    if (yearA != yearB) {
+      return yearA.compareTo(yearB);
+    }
+
+    int termWeight(String s) {
+      if (s.contains('秋') || s.contains('1')) return 1;
+      if (s.contains('春') || s.contains('2')) return 2;
+      if (s.contains('夏') || s.contains('3')) return 3;
+      return 0;
+    }
+
+    return termWeight(a).compareTo(termWeight(b));
+  }
+
   @override
   Future<List<String>> getAvailableSemesters() async {
     if (_cachedProbedGrades != null && _cachedProbedGrades!.isNotEmpty) {
       final sems =
           _cachedProbedGrades!.map((g) => g.semester).toSet().toList()
-            ..sort((a, b) => GradesState.compareSemestersChronologically(b, a));
+            ..sort((a, b) => compareSemestersChronologically(b, a));
       return sems;
     }
     return const <String>[];

@@ -34,27 +34,8 @@ class GradesState {
   final String? errorMessage;
 
   /// 历年各学期排序算法（学年正序，同一年中秋季第1学期在春季第2学期之前）
-  static int compareSemestersChronologically(String a, String b) {
-    // 提取起始年份，如 2023-2024
-    final reg = RegExp(r'(\d{4})-\d{4}');
-    final matchA = reg.firstMatch(a);
-    final matchB = reg.firstMatch(b);
-    final yearA = matchA != null ? int.tryParse(matchA.group(1)!) ?? 0 : 0;
-    final yearB = matchB != null ? int.tryParse(matchB.group(1)!) ?? 0 : 0;
-    if (yearA != yearB) {
-      return yearA.compareTo(yearB);
-    }
-
-    // 同一年中比较学期权重：秋季为第 1 学期，春季为第 2 学期
-    int termWeight(String s) {
-      if (s.contains('秋') || s.contains('1')) return 1;
-      if (s.contains('春') || s.contains('2')) return 2;
-      if (s.contains('夏') || s.contains('3')) return 3;
-      return 0;
-    }
-
-    return termWeight(a).compareTo(termWeight(b));
-  }
+  static int compareSemestersChronologically(String a, String b) =>
+      HbuUrpGateway.compareSemestersChronologically(a, b);
 
   /// 从成绩中提取的所有可用学期列表（最新学期排在最前，降序）
   List<String> get availableSemesters {
