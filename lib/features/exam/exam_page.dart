@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shiori/data/models/exam.dart';
 import 'package:shiori/features/exam/exam_controller.dart';
+import 'package:shiori/shared/widgets/frosted_app_bar.dart';
 
 /// 考试安排页面。
 class ExamPage extends ConsumerWidget {
@@ -16,6 +17,7 @@ class ExamPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: frostedFlexibleSpace(context),
         title: const Text('考试安排'),
         actions: [
           IconButton(
@@ -44,7 +46,7 @@ class ExamPage extends ConsumerWidget {
         child: state.exams.isEmpty && !state.isLoading
             ? _buildEmptyView(context, scheme)
             : ListView.separated(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                 itemCount: state.exams.length,
                 separatorBuilder: (context, index) =>
                     const SizedBox(height: 12),

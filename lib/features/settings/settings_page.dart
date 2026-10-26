@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:shiori/core/session/session_manager.dart';
 import 'package:shiori/core/updater/update_checker.dart';
 import 'package:shiori/features/settings/widgets/theme_settings_section.dart';
+import 'package:shiori/shared/widgets/frosted_app_bar.dart';
 
 /// 「我的」页：账号入口、网络模式、外观设置、关于。
 class SettingsPage extends ConsumerWidget {
@@ -17,9 +18,12 @@ class SettingsPage extends ConsumerWidget {
     final session = ref.watch(sessionControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('我的')),
+      appBar: AppBar(
+        flexibleSpace: frostedFlexibleSpace(context),
+        title: const Text('我的'),
+      ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
         children: [
           _AccountCard(session: session),
           const SizedBox(height: 8),

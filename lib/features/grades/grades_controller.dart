@@ -114,7 +114,15 @@ class GradesController extends Notifier<GradesState> {
 
   /// 加载历年成绩
   Future<void> loadGrades({bool forceRefresh = false}) async {
-    state = state.copyWith(isLoading: true);
+    final cached = HbuUrpGateway.cachedProbedGrades;
+    if (cached != null && cached.isNotEmpty) {
+      state = state.copyWith(
+        allGrades: cached,
+        isLoading: false,
+      );
+    } else {
+      state = state.copyWith(isLoading: true);
+    }
 
     try {
       final gateway = ref.read(hbuUrpGatewayProvider);

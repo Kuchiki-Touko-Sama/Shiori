@@ -63,7 +63,16 @@ class EvaluationController extends Notifier<EvaluationState> {
 
   /// 加载评教任务列表
   Future<void> loadEvaluations() async {
-    state = state.copyWith(isLoading: true);
+    final cached = HbuUrpGateway.cachedProbedEvaluations;
+    if (cached != null) {
+      state = state.copyWith(
+        evaluations: cached,
+        isLoading: false,
+      );
+    } else {
+      state = state.copyWith(isLoading: true);
+    }
+
     try {
       final gateway = ref.read(hbuUrpGatewayProvider);
       final list = await gateway.getEvaluations();

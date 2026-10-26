@@ -29,8 +29,8 @@ class HbuUrpGateway implements EduSystemGateway {
   final GradeParser gradeParser;
   final EvaluationParser evaluationParser;
 
-  /// URP 内网入口配置（河北大学综合教务为 zhjw.hbu.cn）
-  static const String hbuJwxtBase = 'https://zhjw.hbu.cn';
+  /// URP 内网入口配置（河北大学综合教务为 zhjw.hbu.cn，协议为 http）
+  static const String hbuJwxtBase = 'http://zhjw.hbu.cn';
   static const String legacyJwxtBase = 'http://jwxt.hbu.edu.cn';
 
   /// 缓存经过真实会话探测抓取到的课程列表

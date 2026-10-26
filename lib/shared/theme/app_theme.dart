@@ -52,6 +52,12 @@ ThemeData buildAppTheme({
       linearTrackColor: colorScheme.surfaceContainerHighest,
       circularTrackColor: colorScheme.surfaceContainerHighest,
     ),
+    appBarTheme: const AppBarTheme(
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+    ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: useOled ? Colors.black : null,
       indicatorColor: colorScheme.secondaryContainer,

@@ -14,9 +14,11 @@ import 'package:shiori/data/parsers/evaluation_parser.dart';
 import 'package:shiori/data/parsers/exam_parser.dart';
 import 'package:shiori/data/parsers/grade_parser.dart';
 import 'package:shiori/data/parsers/timetable_parser.dart';
+import 'package:shiori/features/evaluation/evaluation_controller.dart';
 import 'package:shiori/features/exam/exam_controller.dart';
 import 'package:shiori/features/grades/grades_controller.dart';
 import 'package:shiori/features/timetable/timetable_controller.dart';
+import 'package:shiori/shared/widgets/frosted_app_bar.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 /// WebVPN 官方认证登录页面。
@@ -440,15 +442,56 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         final n = c.name.toLowerCase();
         return n.contains('wrdvpn') ||
             n.contains('webvpn') ||
+            n.contains('wengine') ||
+            n.contains('vpn') ||
+            n.contains('ticket') ||
             n.contains('castgc') ||
             n.contains('session');
       });
 
-      if (hasSession && (lowerUrl.contains('zhjw') || !lowerUrl.contains('/login'))) {
-        await _syncSessionAndComplete(
-          cookies: cookies,
-          probedUsername: probedName,
-        );
+      if (hasSession) {
+        if (lowerUrl.contains('zhjw') ||
+            lowerUrl.contains('eaff4b8b69386a45300b87')) {
+          await _syncSessionAndComplete(
+            cookies: cookies,
+            probedUsername: probedName,
+          );
+        } else if (!lowerUrl.contains('/login')) {
+          // 当前处于 WebVPN 门户（https://v.hbu.cn/），自动引导进入本科教务学生端
+          if (mounted) {
+            setState(() {
+              _statusHint = 'WebVPN 连接成功，正在自动进入本科教务...';
+            });
+          }
+          try {
+            final clicked = await _controller?.runJavaScriptReturningResult('''
+              (function() {
+                var all = document.querySelectorAll('a, .el-card, div, span, p');
+                for (var i = 0; i < all.length; i++) {
+                  var t = (all[i].innerText || all[i].textContent || '').trim();
+                  if (t === '本科教务学生端') {
+                    var clickable = all[i].closest('a') || all[i].closest('.resource-item') || all[i].closest('.el-card') || all[i];
+                    clickable.click();
+                    return true;
+                  }
+                }
+                return false;
+              })()
+            ''');
+            final wasClicked = clicked == true || clicked.toString() == 'true';
+            if (!wasClicked) {
+              final zhjwUrl = WebVpnUrlRewriter.hbu().toWebVpn(
+                Uri.parse('http://zhjw.hbu.cn/student/courseSelect/thisSemesterCurriculum/index'),
+              );
+              await _controller?.loadRequest(zhjwUrl);
+            }
+          } on Exception {
+            final zhjwUrl = WebVpnUrlRewriter.hbu().toWebVpn(
+              Uri.parse('http://zhjw.hbu.cn/student/courseSelect/thisSemesterCurriculum/index'),
+            );
+            await _controller?.loadRequest(zhjwUrl);
+          }
+        }
       }
     }
   }
@@ -545,18 +588,27 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             username: finalUsername,
           );
 
-      // 触发数据重新拉取，确保主界面即刻呈现最新课表与成绩
-      unawaited(ref
-          .read(timetableControllerProvider.notifier)
-          .loadTimetable(forceRefresh: true));
-      unawaited(ref.read(gradesControllerProvider.notifier).loadGrades());
-      unawaited(ref.read(examControllerProvider.notifier).loadExams());
+      // 触发数据重新拉取，确保主界面即刻呈现最新课表、成绩与考试
+      await Future.wait([
+        ref
+            .read(timetableControllerProvider.notifier)
+            .loadTimetable(forceRefresh: true),
+        ref
+            .read(gradesControllerProvider.notifier)
+            .loadGrades(forceRefresh: true),
+        ref.read(examControllerProvider.notifier).loadExams(forceRefresh: true),
+        ref.read(evaluationControllerProvider.notifier).loadEvaluations(),
+      ]);
 
       final probedCourseCount = HbuUrpGateway.cachedProbedCourses?.length ?? 0;
+      final probedGradeCount = HbuUrpGateway.cachedProbedGrades?.length ?? 0;
       final probedExamCount = HbuUrpGateway.cachedProbedExams?.length ?? 0;
       var syncSummary = '教务会话已就绪';
       if (probedCourseCount > 0) {
         syncSummary = '已同步 $probedCourseCount 门课表';
+        if (probedGradeCount > 0) {
+          syncSummary += '、$probedGradeCount 门成绩';
+        }
         if (probedExamCount > 0) {
           syncSummary += '、$probedExamCount 场考试';
         }
@@ -607,6 +659,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: frostedFlexibleSpace(context),
         title: const Text('WebVPN 登录'),
         actions: [
           IconButton(

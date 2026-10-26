@@ -75,6 +75,7 @@ class SessionState {
 class SessionController extends Notifier<SessionState> {
   static const String _kKeyUsername = 'session.username';
   static const String _kKeyNetworkMode = 'session.network_mode';
+  static const String _kKeyIsAuthenticated = 'session.is_authenticated';
 
   @override
   SessionState build() {
@@ -87,6 +88,7 @@ class SessionController extends Notifier<SessionState> {
   Future<void> checkInitialSession() async {
     final prefs = ref.read(sharedPreferencesProvider);
     final savedUsername = prefs.getString(_kKeyUsername);
+    final isPersistedAuth = prefs.getBool(_kKeyIsAuthenticated) ?? false;
     final modeStr = prefs.getString(_kKeyNetworkMode);
     final networkMode = modeStr == NetworkMode.direct.name
         ? NetworkMode.direct
@@ -94,17 +96,23 @@ class SessionController extends Notifier<SessionState> {
 
     final cookieJar = ref.read(cookieJarProvider);
     final vpnUri = Uri.parse('https://v.hbu.cn/');
-    final cookies = await cookieJar.loadForRequest(vpnUri);
+    final zhjwUri = Uri.parse('http://zhjw.hbu.cn/');
+    final vpnCookies = await cookieJar.loadForRequest(vpnUri);
+    final zhjwCookies = await cookieJar.loadForRequest(zhjwUri);
+    final allCookies = [...vpnCookies, ...zhjwCookies];
 
-    final hasValidCookie = cookies.any((c) {
+    final hasValidCookie = allCookies.any((c) {
       final name = c.name.toLowerCase();
       return name.contains('wrdvpn') ||
           name.contains('webvpn') ||
+          name.contains('wengine') ||
+          name.contains('vpn') ||
+          name.contains('ticket') ||
           name.contains('castgc') ||
           name.contains('session');
     });
 
-    if (hasValidCookie) {
+    if (isPersistedAuth || hasValidCookie) {
       state = state.copyWith(
         status: AuthStatus.authenticated,
         username: savedUsername,
@@ -137,6 +145,7 @@ class SessionController extends Notifier<SessionState> {
     DateTime? loginTime,
   }) async {
     final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setBool(_kKeyIsAuthenticated, true);
     if (username.isNotEmpty) {
       await prefs.setString(_kKeyUsername, username);
     }
@@ -167,6 +176,7 @@ class SessionController extends Notifier<SessionState> {
 
     final prefs = ref.read(sharedPreferencesProvider);
     await prefs.remove(_kKeyUsername);
+    await prefs.setBool(_kKeyIsAuthenticated, false);
 
     state = SessionState(
       status: AuthStatus.unauthenticated,

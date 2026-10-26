@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shiori/core/calendar/ics_exporter.dart';
 import 'package:shiori/data/models/course.dart';
 import 'package:shiori/features/timetable/timetable_controller.dart';
+import 'package:shiori/shared/widgets/frosted_app_bar.dart';
 
 /// 周课表页面。
 class TimetablePage extends ConsumerWidget {
@@ -16,6 +17,7 @@ class TimetablePage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: frostedFlexibleSpace(context),
         title: InkWell(
           borderRadius: BorderRadius.circular(8),
           onTap: () => _showWeekPicker(context, ref, state.currentWeek),
@@ -292,7 +294,7 @@ class _TimetableGrid extends StatelessWidget {
         final colWidth = (constraints.maxWidth - 36) / 7;
 
         return SizedBox(
-          height: _totalPeriods * _rowHeight,
+          height: _totalPeriods * _rowHeight + 96,
           child: Stack(
             children: [
               // 节次时间轴背景线与数字

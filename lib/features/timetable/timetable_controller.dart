@@ -65,7 +65,15 @@ class TimetableController extends Notifier<TimetableState> {
 
   /// 加载课表数据
   Future<void> loadTimetable({bool forceRefresh = false}) async {
-    state = state.copyWith(isLoading: true);
+    final cached = HbuUrpGateway.cachedProbedCourses;
+    if (cached != null && cached.isNotEmpty) {
+      state = state.copyWith(
+        courses: cached,
+        isLoading: false,
+      );
+    } else {
+      state = state.copyWith(isLoading: true);
+    }
 
     try {
       final gateway = ref.read(hbuUrpGatewayProvider);

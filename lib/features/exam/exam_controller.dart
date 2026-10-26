@@ -51,7 +51,15 @@ class ExamController extends Notifier<ExamState> {
 
   /// 加载考试数据
   Future<void> loadExams({bool forceRefresh = false}) async {
-    state = state.copyWith(isLoading: true);
+    final cached = HbuUrpGateway.cachedProbedExams;
+    if (cached != null) {
+      state = state.copyWith(
+        exams: cached,
+        isLoading: false,
+      );
+    } else {
+      state = state.copyWith(isLoading: true);
+    }
 
     try {
       final gateway = ref.read(hbuUrpGatewayProvider);

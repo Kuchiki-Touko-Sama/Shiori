@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shiori/core/calculator/gpa_calculator.dart';
 import 'package:shiori/data/models/grade.dart';
 import 'package:shiori/features/grades/grades_controller.dart';
+import 'package:shiori/shared/widgets/frosted_app_bar.dart';
 
 /// 成绩与 GPA 统计页面。
 class GradesPage extends ConsumerWidget {
@@ -17,6 +18,7 @@ class GradesPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: frostedFlexibleSpace(context),
         title: const Text('成绩与 GPA'),
         actions: [
           IconButton(
@@ -59,7 +61,7 @@ class GradesPage extends ConsumerWidget {
             .read(gradesControllerProvider.notifier)
             .loadGrades(forceRefresh: true),
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
           children: [
             _SummaryHeaderCard(
               summary: state.currentSummary,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shiori/data/models/evaluation.dart';
 import 'package:shiori/features/evaluation/evaluation_controller.dart';
+import 'package:shiori/shared/widgets/frosted_app_bar.dart';
 
 /// 一键评教页面。
 class EvaluationPage extends ConsumerStatefulWidget {
@@ -36,6 +37,7 @@ class _EvaluationPageState extends ConsumerState<EvaluationPage>
 
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: frostedFlexibleSpace(context),
         title: const Text('教学评价'),
         actions: [
           IconButton(
