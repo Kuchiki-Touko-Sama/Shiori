@@ -1,0 +1,482 @@
+{
+    "notFinishedNum": 0,
+    "data": [
+        {
+            "cnt": "",
+            "evaluatedPeople": "姜萍",
+            "evaluationContent": "现代控制理论实验",
+            "id": {
+                "coureSequenceNumber": "02",
+                "evaluatedPeople": "12775",
+                "evaluationContentNumber": "1323S04024",
+                "evaluationPeople": "20231806007",
+                "questionnaireCoding": "0000000406"
+            },
+            "isEvaluated": "是",
+            "note": "",
+            "questionnaire": {
+                "publicationFlag": "1",
+                "questionnaireName": "实验课",
+                "questionnaireNumber": "0000000406",
+                "questionnaireType": {
+                    "questionnaireType": "01",
+                    "statisticsProportion": 100.0,
+                    "typeName": "学生问卷"
+                },
+                "semesterCode": "2025-2026-2-2",
+                "totalUnits": 100.0
+            },
+            "ranking": "",
+            "whflyCnt": ""
+        },
+        {
+            "cnt": "",
+            "evaluatedPeople": "许静",
+            "evaluationContent": "JAVA基础与Android开发实验",
+            "id": {
+                "coureSequenceNumber": "01",
+                "evaluatedPeople": "12936",
+                "evaluationContentNumber": "1323D00034",
+                "evaluationPeople": "20231806007",
+                "questionnaireCoding": "0000000406"
+            },
+            "isEvaluated": "是",
+            "note": "",
+            "questionnaire": {
+                "publicationFlag": "1",
+                "questionnaireName": "实验课",
+                "questionnaireNumber": "0000000406",
+                "questionnaireType": {
+                    "questionnaireType": "01",
+                    "statisticsProportion": 100.0,
+                    "typeName": "学生问卷"
+                },
+                "semesterCode": "2025-2026-2-2",
+                "totalUnits": 100.0
+            },
+            "ranking": "",
+            "whflyCnt": ""
+        },
+        {
+            "cnt": "",
+            "evaluatedPeople": "王霞",
+            "evaluationContent": "过程控制实验",
+            "id": {
+                "coureSequenceNumber": "02",
+                "evaluatedPeople": "14102",
+                "evaluationContentNumber": "1323S04010",
+                "evaluationPeople": "20231806007",
+                "questionnaireCoding": "0000000406"
+            },
+            "isEvaluated": "是",
+            "note": "",
+            "questionnaire": {
+                "publicationFlag": "1",
+                "questionnaireName": "实验课",
+                "questionnaireNumber": "0000000406",
+                "questionnaireType": {
+                    "questionnaireType": "01",
+                    "statisticsProportion": 100.0,
+                    "typeName": "学生问卷"
+                },
+                "semesterCode": "2025-2026-2-2",
+                "totalUnits": 100.0
+            },
+            "ranking": "",
+            "whflyCnt": ""
+        },
+        {
+            "cnt": "",
+            "evaluatedPeople": "田静",
+            "evaluationContent": "PLC原理及应用实验",
+            "id": {
+                "coureSequenceNumber": "04",
+                "evaluatedPeople": "15077",
+                "evaluationContentNumber": "1323S04030",
+                "evaluationPeople": "20231806007",
+                "questionnaireCoding": "0000000406"
+            },
+            "isEvaluated": "是",
+            "note": "",
+            "questionnaire": {
+                "publicationFlag": "1",
+                "questionnaireName": "实验课",
+                "questionnaireNumber": "0000000406",
+                "questionnaireType": {
+                    "questionnaireType": "01",
+                    "statisticsProportion": 100.0,
+                    "typeName": "学生问卷"
+                },
+                "semesterCode": "2025-2026-2-2",
+                "totalUnits": 100.0
+            },
+            "ranking": "",
+            "whflyCnt": ""
+        },
+        {
+            "cnt": "",
+            "evaluatedPeople": "闫婷婷",
+            "evaluationContent": "电机与电力拖动控制系统实验",
+            "id": {
+                "coureSequenceNumber": "02",
+                "evaluatedPeople": "15753",
+                "evaluationContentNumber": "1323S04012",
+                "evaluationPeople": "20231806007",
+                "questionnaireCoding": "0000000406"
+            },
+            "isEvaluated": "是",
+            "note": "",
+            "questionnaire": {
+                "publicationFlag": "1",
+                "questionnaireName": "实验课",
+                "questionnaireNumber": "0000000406",
+                "questionnaireType": {
+                    "questionnaireType": "01",
+                    "statisticsProportion": 100.0,
+                    "typeName": "学生问卷"
+                },
+                "semesterCode": "2025-2026-2-2",
+                "totalUnits": 100.0
+            },
+            "ranking": "",
+            "whflyCnt": ""
+        },
+        {
+            "cnt": "",
+            "evaluatedPeople": "董丽梅",
+            "evaluationContent": "大学物理1",
+            "id": {
+                "coureSequenceNumber": "01",
+                "evaluatedPeople": "12691",
+                "evaluationContentNumber": "1323D00001",
+                "evaluationPeople": "20231806007",
+                "questionnaireCoding": "0000000407"
+            },
+            "isEvaluated": "是",
+            "note": "",
+            "questionnaire": {
+                "publicationFlag": "1",
+                "questionnaireName": "理论课",
+                "questionnaireNumber": "0000000407",
+                "questionnaireType": {
+                    "questionnaireType": "01",
+                    "statisticsProportion": 100.0,
+                    "typeName": "学生问卷"
+                },
+                "semesterCode": "2025-2026-2-2",
+                "totalUnits": 100.0
+            },
+            "ranking": "",
+            "whflyCnt": ""
+        },
+        {
+            "cnt": "",
+            "evaluatedPeople": "董丽梅",
+            "evaluationContent": "形势与政策6",
+            "id": {
+                "coureSequenceNumber": "44",
+                "evaluatedPeople": "12691",
+                "evaluationContentNumber": "3123G0006F",
+                "evaluationPeople": "20231806007",
+                "questionnaireCoding": "0000000407"
+            },
+            "isEvaluated": "是",
+            "note": "",
+            "questionnaire": {
+                "publicationFlag": "1",
+                "questionnaireName": "理论课",
+                "questionnaireNumber": "0000000407",
+                "questionnaireType": {
+                    "questionnaireType": "01",
+                    "statisticsProportion": 100.0,
+                    "typeName": "学生问卷"
+                },
+                "semesterCode": "2025-2026-2-2",
+                "totalUnits": 100.0
+            },
+            "ranking": "",
+            "whflyCnt": ""
+        },
+        {
+            "cnt": "",
+            "evaluatedPeople": "姜萍",
+            "evaluationContent": "现代控制理论",
+            "id": {
+                "coureSequenceNumber": "02",
+                "evaluatedPeople": "12775",
+                "evaluationContentNumber": "1323S04023",
+                "evaluationPeople": "20231806007",
+                "questionnaireCoding": "0000000407"
+            },
+            "isEvaluated": "是",
+            "note": "",
+            "questionnaire": {
+                "publicationFlag": "1",
+                "questionnaireName": "理论课",
+                "questionnaireNumber": "0000000407",
+                "questionnaireType": {
+                    "questionnaireType": "01",
+                    "statisticsProportion": 100.0,
+                    "typeName": "学生问卷"
+                },
+                "semesterCode": "2025-2026-2-2",
+                "totalUnits": 100.0
+            },
+            "ranking": "",
+            "whflyCnt": ""
+        },
+        {
+            "cnt": "",
+            "evaluatedPeople": "许静",
+            "evaluationContent": "JAVA基础与Android开发",
+            "id": {
+                "coureSequenceNumber": "01",
+                "evaluatedPeople": "12936",
+                "evaluationContentNumber": "1323D00033",
+                "evaluationPeople": "20231806007",
+                "questionnaireCoding": "0000000407"
+            },
+            "isEvaluated": "是",
+            "note": "",
+            "questionnaire": {
+                "publicationFlag": "1",
+                "questionnaireName": "理论课",
+                "questionnaireNumber": "0000000407",
+                "questionnaireType": {
+                    "questionnaireType": "01",
+                    "statisticsProportion": 100.0,
+                    "typeName": "学生问卷"
+                },
+                "semesterCode": "2025-2026-2-2",
+                "totalUnits": 100.0
+            },
+            "ranking": "",
+            "whflyCnt": ""
+        },
+        {
+            "cnt": "",
+            "evaluatedPeople": "李海峰",
+            "evaluationContent": "形势与政策6",
+            "id": {
+                "coureSequenceNumber": "44",
+                "evaluatedPeople": "13236",
+                "evaluationContentNumber": "3123G0006F",
+                "evaluationPeople": "20231806007",
+                "questionnaireCoding": "0000000407"
+            },
+            "isEvaluated": "是",
+            "note": "",
+            "questionnaire": {
+                "publicationFlag": "1",
+                "questionnaireName": "理论课",
+                "questionnaireNumber": "0000000407",
+                "questionnaireType": {
+                    "questionnaireType": "01",
+                    "statisticsProportion": 100.0,
+                    "typeName": "学生问卷"
+                },
+                "semesterCode": "2025-2026-2-2",
+                "totalUnits": 100.0
+            },
+            "ranking": "",
+            "whflyCnt": ""
+        },
+        {
+            "cnt": "",
+            "evaluatedPeople": "相喜伟",
+            "evaluationContent": "世界经典广告作品欣赏",
+            "id": {
+                "coureSequenceNumber": "02",
+                "evaluatedPeople": "13253",
+                "evaluationContentNumber": "GEC23RY015",
+                "evaluationPeople": "20231806007",
+                "questionnaireCoding": "0000000407"
+            },
+            "isEvaluated": "是",
+            "note": "",
+            "questionnaire": {
+                "publicationFlag": "1",
+                "questionnaireName": "理论课",
+                "questionnaireNumber": "0000000407",
+                "questionnaireType": {
+                    "questionnaireType": "01",
+                    "statisticsProportion": 100.0,
+                    "typeName": "学生问卷"
+                },
+                "semesterCode": "2025-2026-2-2",
+                "totalUnits": 100.0
+            },
+            "ranking": "",
+            "whflyCnt": ""
+        },
+        {
+            "cnt": "",
+            "evaluatedPeople": "王霞",
+            "evaluationContent": "过程控制",
+            "id": {
+                "coureSequenceNumber": "02",
+                "evaluatedPeople": "14102",
+                "evaluationContentNumber": "1323S04009",
+                "evaluationPeople": "20231806007",
+                "questionnaireCoding": "0000000407"
+            },
+            "isEvaluated": "是",
+            "note": "",
+            "questionnaire": {
+                "publicationFlag": "1",
+                "questionnaireName": "理论课",
+                "questionnaireNumber": "0000000407",
+                "questionnaireType": {
+                    "questionnaireType": "01",
+                    "statisticsProportion": 100.0,
+                    "typeName": "学生问卷"
+                },
+                "semesterCode": "2025-2026-2-2",
+                "totalUnits": 100.0
+            },
+            "ranking": "",
+            "whflyCnt": ""
+        },
+        {
+            "cnt": "",
+            "evaluatedPeople": "赵冬歌",
+            "evaluationContent": "大学数学C（高等数学Ⅰ-2）",
+            "id": {
+                "coureSequenceNumber": "09",
+                "evaluatedPeople": "14493",
+                "evaluationContentNumber": "9123D00007",
+                "evaluationPeople": "20231806007",
+                "questionnaireCoding": "0000000407"
+            },
+            "isEvaluated": "是",
+            "note": "",
+            "questionnaire": {
+                "publicationFlag": "1",
+                "questionnaireName": "理论课",
+                "questionnaireNumber": "0000000407",
+                "questionnaireType": {
+                    "questionnaireType": "01",
+                    "statisticsProportion": 100.0,
+                    "typeName": "学生问卷"
+                },
+                "semesterCode": "2025-2026-2-2",
+                "totalUnits": 100.0
+            },
+            "ranking": "",
+            "whflyCnt": ""
+        },
+        {
+            "cnt": "",
+            "evaluatedPeople": "田静",
+            "evaluationContent": "PLC原理及应用",
+            "id": {
+                "coureSequenceNumber": "03",
+                "evaluatedPeople": "15077",
+                "evaluationContentNumber": "1323S04029",
+                "evaluationPeople": "20231806007",
+                "questionnaireCoding": "0000000407"
+            },
+            "isEvaluated": "是",
+            "note": "",
+            "questionnaire": {
+                "publicationFlag": "1",
+                "questionnaireName": "理论课",
+                "questionnaireNumber": "0000000407",
+                "questionnaireType": {
+                    "questionnaireType": "01",
+                    "statisticsProportion": 100.0,
+                    "typeName": "学生问卷"
+                },
+                "semesterCode": "2025-2026-2-2",
+                "totalUnits": 100.0
+            },
+            "ranking": "",
+            "whflyCnt": ""
+        },
+        {
+            "cnt": "",
+            "evaluatedPeople": "周振",
+            "evaluationContent": "控制系统课程设计",
+            "id": {
+                "coureSequenceNumber": "02",
+                "evaluatedPeople": "15489",
+                "evaluationContentNumber": "1323S04013",
+                "evaluationPeople": "20231806007",
+                "questionnaireCoding": "0000000407"
+            },
+            "isEvaluated": "是",
+            "note": "",
+            "questionnaire": {
+                "publicationFlag": "1",
+                "questionnaireName": "理论课",
+                "questionnaireNumber": "0000000407",
+                "questionnaireType": {
+                    "questionnaireType": "01",
+                    "statisticsProportion": 100.0,
+                    "typeName": "学生问卷"
+                },
+                "semesterCode": "2025-2026-2-2",
+                "totalUnits": 100.0
+            },
+            "ranking": "",
+            "whflyCnt": ""
+        },
+        {
+            "cnt": "",
+            "evaluatedPeople": "闫婷婷",
+            "evaluationContent": "电机与电力拖动控制系统",
+            "id": {
+                "coureSequenceNumber": "02",
+                "evaluatedPeople": "15753",
+                "evaluationContentNumber": "1323S04011",
+                "evaluationPeople": "20231806007",
+                "questionnaireCoding": "0000000407"
+            },
+            "isEvaluated": "是",
+            "note": "",
+            "questionnaire": {
+                "publicationFlag": "1",
+                "questionnaireName": "理论课",
+                "questionnaireNumber": "0000000407",
+                "questionnaireType": {
+                    "questionnaireType": "01",
+                    "statisticsProportion": 100.0,
+                    "typeName": "学生问卷"
+                },
+                "semesterCode": "2025-2026-2-2",
+                "totalUnits": 100.0
+            },
+            "ranking": "",
+            "whflyCnt": ""
+        },
+        {
+            "cnt": "",
+            "evaluatedPeople": "张克克",
+            "evaluationContent": "习近平新时代中国特色社会主义思想概论",
+            "id": {
+                "coureSequenceNumber": "27",
+                "evaluatedPeople": "16141",
+                "evaluationContentNumber": "3123G00005",
+                "evaluationPeople": "20231806007",
+                "questionnaireCoding": "0000000407"
+            },
+            "isEvaluated": "是",
+            "note": "",
+            "questionnaire": {
+                "publicationFlag": "1",
+                "questionnaireName": "理论课",
+                "questionnaireNumber": "0000000407",
+                "questionnaireType": {
+                    "questionnaireType": "01",
+                    "statisticsProportion": 100.0,
+                    "typeName": "学生问卷"
+                },
+                "semesterCode": "2025-2026-2-2",
+                "totalUnits": 100.0
+            },
+            "ranking": "",
+            "whflyCnt": ""
+        }
+    ],
+    "evaluationNum": 17
+}

@@ -1,0 +1,16 @@
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - test/fixtures/**
+
+linter:
+  rules:
+    # URL / 十六进制密文等字符串经常超过 80 字符，不强制换行
+    lines_longer_than_80_chars: false
+    # 应用项目而非发布包，不强制为每个公开成员写文档注释
+    public_member_api_docs: false
+    # 新构造器声明风格 lint 对现有代码无收益
+    unnecessary_type_name_in_constructor: false
