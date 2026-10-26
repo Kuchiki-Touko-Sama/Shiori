@@ -43,6 +43,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   bool _isLoading = true;
   double _progress = 0;
   bool _isSyncing = false;
+  bool _isPortalDetected = false;
   bool _isUrpDetected = false;
   String? _detectedUsername;
   String? _statusHint;
@@ -107,11 +108,51 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Future<void> _handlePageFinished(String url) async {
     if (_isSyncing) return;
 
+    final uri = Uri.tryParse(url);
+    final host = uri?.host.toLowerCase() ?? '';
+    final path = uri?.path.toLowerCase() ?? '';
+    final lowerUrl = url.toLowerCase();
+
+    // 1. 判断是否处于 WebVPN 门户首页（资源选择界面，未进入任何具体内网服务）
+    final isEncryptedService = path.startsWith('/http/') ||
+        path.startsWith('/https/') ||
+        path.startsWith('/http-') ||
+        path.startsWith('/https-') ||
+        host == 'zhjw.hbu.cn';
+
+    final isVpnPortal = host == 'v.hbu.cn' &&
+        !isEncryptedService &&
+        !lowerUrl.contains('/login') &&
+        !lowerUrl.contains('cas');
+
+    if (isVpnPortal) {
+      if (mounted) {
+        setState(() {
+          _isPortalDetected = true;
+          _isUrpDetected = false;
+          _statusHint = 'WebVPN 连接成功！请在页面中点击「本科教务学生端」';
+        });
+      }
+      // 绝不在此拦截退出，保障用户自主选择并点击进入教务系统
+      return;
+    }
+
+    if (lowerUrl.contains('/login') || lowerUrl.contains('sso.hbu.cn')) {
+      if (mounted && _statusHint != '请在此完成账号登录') {
+        setState(() {
+          _isPortalDetected = false;
+          _isUrpDetected = false;
+          _statusHint = '请在此完成账号登录';
+        });
+      }
+      return;
+    }
+
     var probedUrp = false;
     String? probedName;
 
-    // 1. 注入 JavaScript 探针探测页面特征（支持新版 URP 教务系统）
-    if (_controller != null) {
+    // 2. 注入 JavaScript 探针探测页面特征（支持新版 URP 教务系统）
+    if (_controller != null && isEncryptedService) {
       try {
         final jsProbe = await _controller!.runJavaScriptReturningResult(
           r'''
@@ -127,7 +168,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             var isUrp = title.indexOf('URP') !== -1 ||
                         body.indexOf('URP高校教务管理系统') !== -1 ||
                         body.indexOf('主修/辅修方案管理') !== -1 ||
-                        body.indexOf('我的待办任务') !== -1;
+                        body.indexOf('我的待办任务') !== -1 ||
+                        body.indexOf('培养方案') !== -1 ||
+                        body.indexOf('综合教务') !== -1 ||
+                        body.indexOf('学生课表') !== -1 ||
+                        body.indexOf('欢迎您') !== -1;
             return JSON.stringify({
               isUrp: isUrp,
               username: username
@@ -156,21 +201,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       }
     }
 
-    if (mounted && probedUrp != _isUrpDetected) {
+    if (mounted && (probedUrp != _isUrpDetected || _isPortalDetected)) {
       setState(() {
+        _isPortalDetected = false;
         _isUrpDetected = probedUrp;
         if (probedName != null) _detectedUsername = probedName;
       });
     }
 
-    // 2. 判断是否满足登录成功条件
-    // 特征 A: 页面 DOM 明确包含 URP 教务系统特征（如「欢迎您，赵睿哲」或「URP高校教务管理系统」）
-    // 特征 B: WebVPN 门户已加载完成，并成功签发会话凭据
-    final lowerUrl = url.toLowerCase();
-    final isCasAuth = lowerUrl.contains('sso.hbu.cn') ||
-        (lowerUrl.contains('v.hbu.cn/login') && !probedUrp);
-
     if (probedUrp) {
+      if (mounted) {
+        setState(() {
+          _statusHint = '已进入教务系统，正在同步课表与成绩...';
+        });
+      }
       // 在教务系统同源环境中，自动嗅探菜单并携带 vpnPrefix 抓取课表与考试数据
       if (_controller != null) {
         try {
@@ -429,68 +473,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         }
       }
 
-      // 100% 已在教务系统内部，直接自动触发同步
-      await _syncSessionAndComplete(probedUsername: probedName);
-      return;
-    }
+      final probedCourseCount = HbuUrpGateway.cachedProbedCourses?.length ?? 0;
+      final probedGradeCount = HbuUrpGateway.cachedProbedGrades?.length ?? 0;
 
-    if (!isCasAuth) {
-      // 检查 Cookie 是否包含会话标识
-      final vpnUri = Uri.parse('https://v.hbu.cn/');
-      final cookies = await _cookieManager.getCookies(domain: vpnUri);
-      final hasSession = cookies.any((c) {
-        final n = c.name.toLowerCase();
-        return n.contains('wrdvpn') ||
-            n.contains('webvpn') ||
-            n.contains('wengine') ||
-            n.contains('vpn') ||
-            n.contains('ticket') ||
-            n.contains('castgc') ||
-            n.contains('session');
-      });
-
-      if (hasSession) {
-        if (lowerUrl.contains('zhjw') ||
-            lowerUrl.contains('eaff4b8b69386a45300b87')) {
-          await _syncSessionAndComplete(
-            cookies: cookies,
-            probedUsername: probedName,
-          );
-        } else if (!lowerUrl.contains('/login')) {
-          // 当前处于 WebVPN 门户（https://v.hbu.cn/），自动引导进入本科教务学生端
-          if (mounted) {
-            setState(() {
-              _statusHint = 'WebVPN 连接成功，正在自动进入本科教务...';
-            });
-          }
-          try {
-            final clicked = await _controller?.runJavaScriptReturningResult('''
-              (function() {
-                var all = document.querySelectorAll('a, .el-card, div, span, p');
-                for (var i = 0; i < all.length; i++) {
-                  var t = (all[i].innerText || all[i].textContent || '').trim();
-                  if (t === '本科教务学生端') {
-                    var clickable = all[i].closest('a') || all[i].closest('.resource-item') || all[i].closest('.el-card') || all[i];
-                    clickable.click();
-                    return true;
-                  }
-                }
-                return false;
-              })()
-            ''');
-            final wasClicked = clicked == true || clicked.toString() == 'true';
-            if (!wasClicked) {
-              final zhjwUrl = WebVpnUrlRewriter.hbu().toWebVpn(
-                Uri.parse('http://zhjw.hbu.cn/student/courseSelect/thisSemesterCurriculum/index'),
-              );
-              await _controller?.loadRequest(zhjwUrl);
-            }
-          } on Exception {
-            final zhjwUrl = WebVpnUrlRewriter.hbu().toWebVpn(
-              Uri.parse('http://zhjw.hbu.cn/student/courseSelect/thisSemesterCurriculum/index'),
-            );
-            await _controller?.loadRequest(zhjwUrl);
-          }
+      // 仅当确实成功嗅探到了课表或成绩数据，才自动同步并退出登录页
+      if (probedCourseCount > 0 || probedGradeCount > 0) {
+        await _syncSessionAndComplete(probedUsername: probedName);
+        return;
+      } else {
+        if (mounted) {
+          setState(() {
+            _statusHint = '已进入教务系统，请进入课表页或点击下方按钮同步';
+          });
         }
       }
     }
@@ -632,9 +626,43 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
+  /// 处理用户点击底部悬浮按钮操作
+  Future<void> _handleFloatingActionButtonTap() async {
+    if (_isSyncing) return;
+    if (_isPortalDetected && !_isUrpDetected) {
+      // 用户在 WebVPN 门户，点击浮钮辅助直达教务学生端
+      setState(() {
+        _statusHint = '正在为您跳转进入本科教务学生端...';
+      });
+      final zhjwUrl = WebVpnUrlRewriter.hbu().toWebVpn(
+        Uri.parse('http://zhjw.hbu.cn/student/courseSelect/thisSemesterCurriculum/index'),
+      );
+      await _controller?.loadRequest(zhjwUrl);
+    } else {
+      await _manualSyncAndComplete();
+    }
+  }
+
   /// 用户点击悬浮按钮手动强制触发会话同步
   Future<void> _manualSyncAndComplete() async {
-    await _syncSessionAndComplete(probedUsername: _detectedUsername);
+    if (_isSyncing) return;
+    setState(() {
+      _isSyncing = true;
+      _statusHint = '正在检查教务会话并同步数据...';
+    });
+    try {
+      if (_controller != null) {
+        final curUrl = await _controller!.currentUrl() ?? '';
+        await _handlePageFinished(curUrl);
+      }
+      await _syncSessionAndComplete(probedUsername: _detectedUsername);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+        });
+      }
+    }
   }
 
   /// 刷新页面
@@ -684,51 +712,98 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       ),
       floatingActionButton: _controller != null
           ? FloatingActionButton.extended(
-              onPressed: _isSyncing ? null : _manualSyncAndComplete,
+              onPressed: _isSyncing ? null : _handleFloatingActionButtonTap,
               icon: Icon(
                 _isUrpDetected
                     ? Icons.check_circle_rounded
-                    : Icons.login_rounded,
+                    : (_isPortalDetected
+                        ? Icons.school_rounded
+                        : Icons.sync_rounded),
               ),
               label: Text(
                 _isUrpDetected
-                    ? '检测到教务主页，立即进入 App'
-                    : '已进入教务系统？点击同步',
+                    ? '已就绪，立即同步并进入 App'
+                    : (_isPortalDetected
+                        ? '进入「本科教务学生端」 ➔'
+                        : '已进入教务系统？点击同步'),
               ),
               backgroundColor: _isUrpDetected
                   ? scheme.primary
-                  : scheme.secondaryContainer,
+                  : (_isPortalDetected
+                      ? scheme.primaryContainer
+                      : scheme.secondaryContainer),
               foregroundColor: _isUrpDetected
                   ? scheme.onPrimary
-                  : scheme.onSecondaryContainer,
+                  : (_isPortalDetected
+                      ? scheme.onPrimaryContainer
+                      : scheme.onSecondaryContainer),
             )
           : null,
       body: _controller != null
-          ? Stack(
+          ? Column(
               children: [
-                WebViewWidget(controller: _controller!),
-                if (_isSyncing)
-                  ColoredBox(
-                    color: Colors.black45,
-                    child: Center(
-                      child: Card(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 16,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const CircularProgressIndicator(),
-                              const SizedBox(width: 16),
-                              Text(_statusHint ?? '正在处理...'),
-                            ],
+                if (_statusHint != null)
+                  Container(
+                    width: double.infinity,
+                    color:
+                        scheme.surfaceContainerHighest.withValues(alpha: 0.85),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _isPortalDetected
+                              ? Icons.info_outline_rounded
+                              : (_isUrpDetected
+                                  ? Icons.check_circle_outline_rounded
+                                  : Icons.vpn_key_outlined),
+                          size: 16,
+                          color: scheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _statusHint!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: scheme.onSurfaceVariant,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      WebViewWidget(controller: _controller!),
+                      if (_isSyncing)
+                        ColoredBox(
+                          color: Colors.black45,
+                          child: Center(
+                            child: Card(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 16,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const CircularProgressIndicator(),
+                                    const SizedBox(width: 16),
+                                    Text(_statusHint ?? '正在处理...'),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ],
             )
           : _buildFallbackView(scheme),
