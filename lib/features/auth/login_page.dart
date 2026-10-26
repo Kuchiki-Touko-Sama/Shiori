@@ -215,270 +215,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           _statusHint = '已进入教务系统，正在同步课表与成绩...';
         });
       }
-      // 在教务系统同源环境中，自动嗅探菜单并携带 vpnPrefix 抓取课表与考试数据
-      if (_controller != null) {
-        try {
-          final jsProbeResult = await _controller!.runJavaScriptReturningResult(
-            '''
-            (async function() {
-              var prefixMatch = location.pathname.match(new RegExp('^(/https?-[0-9]+/[^/]+|/https?/[^/]+)'));
-              var vpnPrefix = prefixMatch ? prefixMatch[1] : '';
 
-              // 候选端点列表（均拼装真实的 vpnPrefix）
-              var scheduleUrls = [
-                vpnPrefix + '/student/courseSelect/thisSemesterCurriculum/ajaxStudentSchedule/curr/callback',
-                vpnPrefix + '/student/courseSelect/thisSemesterCurriculum/ajaxStudentSchedule/callback',
-                vpnPrefix + '/student/courseSelect/calendarSchedule/index',
-                vpnPrefix + '/student/courseSelect/thisSemesterCurriculum/index'
-              ];
-              var examUrls = [
-                vpnPrefix + '/student/examination/examArrangement/index',
-                vpnPrefix + '/student/examination/examArrangement/data',
-                vpnPrefix + '/ksAction.do?actionType=7'
-              ];
-              var gradeUrls = [
-                vpnPrefix + '/student/integratedQuery/scoreQuery/allPassingScores/index',
-                vpnPrefix + '/student/integratedQuery/scoreQuery/allTermScores/index',
-                vpnPrefix + '/student/integratedQuery/scoreQuery/thisTermScores/index'
-              ];
-              var evalUrls = [
-                vpnPrefix + '/student/teachingEvaluation/teachingEvaluation/search',
-                vpnPrefix + '/student/teachingEvaluation/evaluation/index'
-              ];
-
-              // 1. 从浏览器资源性能时序中嗅探已执行的 Ajax 请求（如有直接命中）
-              try {
-                var perfEntries = (window.performance && window.performance.getEntriesByType)
-                    ? window.performance.getEntriesByType('resource')
-                    : [];
-                for (var p = 0; p < perfEntries.length; p++) {
-                  var pUrl = perfEntries[p].name || '';
-                  if (pUrl.indexOf('ajaxStudentSchedule') !== -1 && scheduleUrls.indexOf(pUrl) === -1) {
-                    scheduleUrls.unshift(pUrl);
-                  }
-                  if (pUrl.indexOf('examArrangement') !== -1 && examUrls.indexOf(pUrl) === -1) {
-                    examUrls.unshift(pUrl);
-                  }
-                  if ((pUrl.indexOf('allPassingScores') !== -1 || pUrl.indexOf('scoreQuery') !== -1) && gradeUrls.indexOf(pUrl) === -1) {
-                    gradeUrls.unshift(pUrl);
-                  }
-                  if ((pUrl.indexOf('teachingEvaluation') !== -1 || pUrl.indexOf('evaluation') !== -1) && evalUrls.indexOf(pUrl) === -1) {
-                    evalUrls.unshift(pUrl);
-                  }
-                }
-              } catch (e) {}
-
-              // 2. 访问课表主页与成绩主页嗅探页面内嵌的动态 Token
-              try {
-                var indexRes = await fetch(vpnPrefix + '/student/courseSelect/thisSemesterCurriculum/index', { credentials: 'include' });
-                if (indexRes.ok) {
-                  var indexHtml = await indexRes.text();
-                  var mToken = indexHtml.match(new RegExp('thisSemesterCurriculum/([a-zA-Z0-9_-]+)/ajaxStudentSchedule'));
-                  if (mToken && mToken[1]) {
-                    var token = mToken[1];
-                    scheduleUrls.unshift(vpnPrefix + '/student/courseSelect/thisSemesterCurriculum/' + token + '/ajaxStudentSchedule/curr/callback');
-                  }
-                }
-              } catch (e) {}
-
-              try {
-                var scoreIndexRes = await fetch(vpnPrefix + '/student/integratedQuery/scoreQuery/allPassingScores/index', { credentials: 'include' });
-                if (scoreIndexRes.ok) {
-                  var scoreIndexHtml = await scoreIndexRes.text();
-                  var mScoreToken = scoreIndexHtml.match(new RegExp('scoreQuery/([a-zA-Z0-9_-]+)/allPassingScores/callback'));
-                  if (mScoreToken && mScoreToken[1]) {
-                    var sToken = mScoreToken[1];
-                    gradeUrls.unshift(vpnPrefix + '/student/integratedQuery/scoreQuery/' + sToken + '/allPassingScores/callback');
-                  }
-                }
-              } catch (e) {}
-
-              // 3. 智能扫描页面上的所有链接与菜单
-              document.querySelectorAll('a, [url], [data-url]').forEach(function(el) {
-                var text = (el.innerText || el.textContent || '').trim();
-                var href = el.getAttribute('href') || el.getAttribute('url') || el.getAttribute('data-url') || '';
-                if (href && href !== '#' && href.indexOf('javascript') === -1) {
-                  var full = href.startsWith('http') ? href : (href.startsWith('/') ? (vpnPrefix + href) : (vpnPrefix + '/' + href));
-                  if (text.indexOf('课表') !== -1 && scheduleUrls.indexOf(full) === -1) scheduleUrls.unshift(full);
-                  if (text.indexOf('考试') !== -1 && examUrls.indexOf(full) === -1) examUrls.unshift(full);
-                  if (text.indexOf('成绩') !== -1 && gradeUrls.indexOf(full) === -1) gradeUrls.unshift(full);
-                  if ((text.indexOf('评教') !== -1 || text.indexOf('评估') !== -1) && evalUrls.indexOf(full) === -1) evalUrls.unshift(full);
-                }
-              });
-
-              var scheduleData = '';
-              for (var i = 0; i < scheduleUrls.length; i++) {
-                try {
-                  var sUrl = scheduleUrls[i];
-                  var isAjax = sUrl.indexOf('ajaxStudentSchedule') !== -1;
-
-                  // 若是 ajax 接口，优先使用 POST 请求并附带 XMLHttpRequest 标头
-                  if (isAjax) {
-                    var postRes = await fetch(sUrl, {
-                      method: 'POST',
-                      credentials: 'include',
-                      headers: {
-                        'Accept': 'application/json, text/javascript, */*; q=0.01',
-                        'X-Requested-With': 'XMLHttpRequest'
-                      }
-                    });
-                    if (postRes.ok) {
-                      var tPost = await postRes.text();
-                      if (tPost && tPost.length > 50 && (tPost.indexOf('selectCourseList') !== -1 || tPost.indexOf('dateList') !== -1 || tPost.indexOf('xkxx') !== -1 || tPost.indexOf('courseName') !== -1)) {
-                        scheduleData = tPost;
-                        break;
-                      }
-                    }
-                  }
-
-                  // 常规 GET 请求
-                  var res = await fetch(sUrl, { credentials: 'include' });
-                  if (res.ok) {
-                    var t = await res.text();
-                    if (t && t.length > 50 && (t.indexOf('course') !== -1 || t.indexOf('selectCourseList') !== -1 || t.indexOf('dateList') !== -1 || t.indexOf('kcm') !== -1 || t.indexOf('table') !== -1 || t.indexOf('xkxx') !== -1)) {
-                      scheduleData = t;
-                      break;
-                    }
-                  }
-                } catch (e) {}
-              }
-
-              var examData = '';
-              for (var j = 0; j < examUrls.length; j++) {
-                try {
-                  var eUrl = examUrls[j];
-                  if (eUrl.indexOf('/data') !== -1) {
-                    var postE = await fetch(eUrl, {
-                      method: 'POST',
-                      credentials: 'include',
-                      headers: {
-                        'Accept': 'application/json, text/javascript, */*; q=0.01',
-                        'X-Requested-With': 'XMLHttpRequest'
-                      }
-                    });
-                    if (postE.ok) {
-                      var tE = await postE.text();
-                      if (tE && tE.length > 50) {
-                        examData = tE;
-                        break;
-                      }
-                    }
-                  }
-
-                  var r2 = await fetch(eUrl, { credentials: 'include' });
-                  if (r2.ok) {
-                    var t2 = await r2.text();
-                    if (t2 && t2.length > 50 && (t2.indexOf('exam') !== -1 || t2.indexOf('考试') !== -1 || t2.indexOf('table') !== -1 || t2.indexOf('data') !== -1)) {
-                      examData = t2;
-                      break;
-                    }
-                  }
-                } catch (e) {}
-              }
-
-              var gradeData = '';
-              for (var k = 0; k < gradeUrls.length; k++) {
-                try {
-                  var gUrl = gradeUrls[k];
-                  var gRes = await fetch(gUrl, {
-                    credentials: 'include',
-                    headers: {
-                      'Accept': '*/*',
-                      'X-Requested-With': 'XMLHttpRequest'
-                    }
-                  });
-                  if (gRes.ok) {
-                    var tG = await gRes.text();
-                    if (tG && tG.length > 50 && (tG.indexOf('lnList') !== -1 || tG.indexOf('cjList') !== -1 || tG.indexOf('courseScore') !== -1 || tG.indexOf('table') !== -1)) {
-                      gradeData = tG;
-                      break;
-                    }
-                  }
-                } catch (e) {}
-              }
-
-              var evalData = '';
-              for (var ev = 0; ev < evalUrls.length; ev++) {
-                try {
-                  var evUrl = evalUrls[ev];
-                  var isSearch = evUrl.indexOf('search') !== -1;
-                  var evResp = await fetch(evUrl, {
-                    method: isSearch ? 'POST' : 'GET',
-                    headers: {
-                      'Accept': 'application/json, text/javascript, */*; q=0.01',
-                      'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    credentials: 'include'
-                  });
-                  if (evResp.ok) {
-                    var tEv = await evResp.text();
-                    if (tEv && tEv.length > 30 && (tEv.indexOf('evaluationContent') !== -1 || tEv.indexOf('questionnaire') !== -1 || tEv.indexOf('data') !== -1)) {
-                      evalData = tEv;
-                      break;
-                    }
-                  }
-                } catch (e) {}
-              }
-
-              return JSON.stringify({
-                schedule: scheduleData,
-                exam: examData,
-                grade: gradeData,
-                evaluation: evalData
-              });
-            })()
-            ''',
-          );
-
-          var cleanJson = jsProbeResult.toString();
-          if (cleanJson.startsWith('"') && cleanJson.endsWith('"')) {
-            cleanJson = jsonDecode(cleanJson) as String;
-          }
-          final dynamic parsedResult = jsonDecode(cleanJson);
-          if (parsedResult is Map<String, dynamic>) {
-            final rawSched = (parsedResult['schedule'] as String? ?? '').trim();
-            if (rawSched.isNotEmpty) {
-              final probedCourses = const TimetableParser().parse(rawSched);
-              if (probedCourses.isNotEmpty) {
-                HbuUrpGateway.setProbedCourses(probedCourses);
-              }
-            }
-
-            final rawExam = (parsedResult['exam'] as String? ?? '').trim();
-            if (rawExam.isNotEmpty) {
-              final probedExams = const ExamParser().parse(rawExam);
-              if (probedExams.isNotEmpty) {
-                HbuUrpGateway.setProbedExams(probedExams);
-              }
-            }
-
-            final rawGrade = (parsedResult['grade'] as String? ?? '').trim();
-            if (rawGrade.isNotEmpty) {
-              final probedGrades = const GradeParser().parse(rawGrade);
-              if (probedGrades.isNotEmpty) {
-                HbuUrpGateway.setProbedGrades(probedGrades);
-              }
-            }
-
-            final rawEval = (parsedResult['evaluation'] as String? ?? '').trim();
-            if (rawEval.isNotEmpty) {
-              final probedEvals = const EvaluationParser().parseList(rawEval);
-              if (probedEvals.isNotEmpty) {
-                HbuUrpGateway.setProbedEvaluations(probedEvals);
-              }
-            }
-          }
-        } on Exception {
-          // 同源嗅探异常不影响主登录流
-        }
-      }
+      // 执行同源嗅探
+      await _performUrpProbe();
 
       final probedCourseCount = HbuUrpGateway.cachedProbedCourses?.length ?? 0;
       final probedGradeCount = HbuUrpGateway.cachedProbedGrades?.length ?? 0;
 
       // 仅当确实成功嗅探到了课表或成绩数据，才自动同步并退出登录页
       if (probedCourseCount > 0 || probedGradeCount > 0) {
-        await _syncSessionAndComplete(probedUsername: probedName);
+        await _syncSessionAndComplete(probedUsername: probedName ?? _detectedUsername);
         return;
       } else {
         if (mounted) {
@@ -487,6 +233,276 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           });
         }
       }
+    }
+  }
+
+  /// 在 WebView 中直接注入 JS 嗅探 URP 课表、成绩、考试与评教数据并填充权威缓存。
+  Future<void> _performUrpProbe() async {
+    if (_controller == null) return;
+    try {
+      final jsProbeResult = await _controller!.runJavaScriptReturningResult(
+        r'''
+        (async function() {
+          var prefixMatch = location.pathname.match(new RegExp('^(/https?-[0-9]+/[^/]+|/https?/[^/]+)'));
+          var vpnPrefix = prefixMatch ? prefixMatch[1] : '';
+
+          // 候选端点列表（均拼装真实的 vpnPrefix）
+          var scheduleUrls = [
+            vpnPrefix + '/student/courseSelect/thisSemesterCurriculum/ajaxStudentSchedule/curr/callback',
+            vpnPrefix + '/student/courseSelect/thisSemesterCurriculum/ajaxStudentSchedule/callback',
+            vpnPrefix + '/student/courseSelect/calendarSchedule/index',
+            vpnPrefix + '/student/courseSelect/thisSemesterCurriculum/index'
+          ];
+          var examUrls = [
+            vpnPrefix + '/student/examination/examArrangement/index',
+            vpnPrefix + '/student/examination/examArrangement/data',
+            vpnPrefix + '/ksAction.do?actionType=7'
+          ];
+          var gradeUrls = [
+            vpnPrefix + '/student/integratedQuery/scoreQuery/allPassingScores/index',
+            vpnPrefix + '/student/integratedQuery/scoreQuery/allTermScores/index',
+            vpnPrefix + '/student/integratedQuery/scoreQuery/thisTermScores/index'
+          ];
+          var evalUrls = [
+            vpnPrefix + '/student/teachingEvaluation/teachingEvaluation/search',
+            vpnPrefix + '/student/teachingEvaluation/evaluation/index'
+          ];
+
+          // 1. 从浏览器资源性能时序中嗅探已执行的 Ajax 请求（如有直接命中）
+          try {
+            var perfEntries = (window.performance && window.performance.getEntriesByType)
+                ? window.performance.getEntriesByType('resource')
+                : [];
+            for (var p = 0; p < perfEntries.length; p++) {
+              var pUrl = perfEntries[p].name || '';
+              if (pUrl.indexOf('ajaxStudentSchedule') !== -1 && scheduleUrls.indexOf(pUrl) === -1) {
+                scheduleUrls.unshift(pUrl);
+              }
+              if (pUrl.indexOf('examArrangement') !== -1 && examUrls.indexOf(pUrl) === -1) {
+                examUrls.unshift(pUrl);
+              }
+              if ((pUrl.indexOf('allPassingScores') !== -1 || pUrl.indexOf('scoreQuery') !== -1) && gradeUrls.indexOf(pUrl) === -1) {
+                gradeUrls.unshift(pUrl);
+              }
+              if ((pUrl.indexOf('teachingEvaluation') !== -1 || pUrl.indexOf('evaluation') !== -1) && evalUrls.indexOf(pUrl) === -1) {
+                evalUrls.unshift(pUrl);
+              }
+            }
+          } catch (e) {}
+
+          // 2. 访问课表主页与成绩主页嗅探页面内嵌的动态 Token
+          try {
+            var indexRes = await fetch(vpnPrefix + '/student/courseSelect/thisSemesterCurriculum/index', { credentials: 'include' });
+            if (indexRes.ok) {
+              var indexHtml = await indexRes.text();
+              var mToken = indexHtml.match(new RegExp('thisSemesterCurriculum/([a-zA-Z0-9_-]+)/ajaxStudentSchedule'));
+              if (mToken && mToken[1]) {
+                var token = mToken[1];
+                scheduleUrls.unshift(vpnPrefix + '/student/courseSelect/thisSemesterCurriculum/' + token + '/ajaxStudentSchedule/curr/callback');
+              }
+            }
+          } catch (e) {}
+
+          try {
+            var scoreIndexRes = await fetch(vpnPrefix + '/student/integratedQuery/scoreQuery/allPassingScores/index', { credentials: 'include' });
+            if (scoreIndexRes.ok) {
+              var scoreIndexHtml = await scoreIndexRes.text();
+              var mScoreToken = scoreIndexHtml.match(new RegExp('scoreQuery/([a-zA-Z0-9_-]+)/allPassingScores/callback'));
+              if (mScoreToken && mScoreToken[1]) {
+                var sToken = mScoreToken[1];
+                gradeUrls.unshift(vpnPrefix + '/student/integratedQuery/scoreQuery/' + sToken + '/allPassingScores/callback');
+              }
+            }
+          } catch (e) {}
+
+          // 3. 智能扫描页面上的所有链接与菜单
+          document.querySelectorAll('a, [url], [data-url]').forEach(function(el) {
+            var text = (el.innerText || el.textContent || '').trim();
+            var href = el.getAttribute('href') || el.getAttribute('url') || el.getAttribute('data-url') || '';
+            if (href && href !== '#' && href.indexOf('javascript') === -1) {
+              var full = href.startsWith('http') ? href : (href.startsWith('/') ? (vpnPrefix + href) : (vpnPrefix + '/' + href));
+              if (text.indexOf('课表') !== -1 && scheduleUrls.indexOf(full) === -1) scheduleUrls.unshift(full);
+              if (text.indexOf('考试') !== -1 && examUrls.indexOf(full) === -1) examUrls.unshift(full);
+              if (text.indexOf('成绩') !== -1 && gradeUrls.indexOf(full) === -1) gradeUrls.unshift(full);
+              if ((text.indexOf('评教') !== -1 || text.indexOf('评估') !== -1) && evalUrls.indexOf(full) === -1) evalUrls.unshift(full);
+            }
+          });
+
+          // 提取用户名
+          var body = document.body ? document.body.innerText : '';
+          var m = body.match(/欢迎您[，,:：\s]*([^\s\n\r<,，!！]+)/);
+          var username = m ? m[1] : '';
+
+          var scheduleData = '';
+          for (var i = 0; i < scheduleUrls.length; i++) {
+            try {
+              var sUrl = scheduleUrls[i];
+              var isAjax = sUrl.indexOf('ajaxStudentSchedule') !== -1;
+
+              // 若是 ajax 接口，优先使用 POST 请求并附带 XMLHttpRequest 标头
+              if (isAjax) {
+                var postRes = await fetch(sUrl, {
+                  method: 'POST',
+                  credentials: 'include',
+                  headers: {
+                    'Accept': 'application/json, text/javascript, */*; q=0.01',
+                    'X-Requested-With': 'XMLHttpRequest'
+                  }
+                });
+                if (postRes.ok) {
+                  var tPost = await postRes.text();
+                  if (tPost && tPost.length > 50 && (tPost.indexOf('selectCourseList') !== -1 || tPost.indexOf('dateList') !== -1 || tPost.indexOf('xkxx') !== -1 || tPost.indexOf('courseName') !== -1)) {
+                    scheduleData = tPost;
+                    break;
+                  }
+                }
+              }
+
+              // 常规 GET 请求
+              var res = await fetch(sUrl, { credentials: 'include' });
+              if (res.ok) {
+                var t = await res.text();
+                if (t && t.length > 50 && (t.indexOf('course') !== -1 || t.indexOf('selectCourseList') !== -1 || t.indexOf('dateList') !== -1 || t.indexOf('kcm') !== -1 || t.indexOf('table') !== -1 || t.indexOf('xkxx') !== -1)) {
+                  scheduleData = t;
+                  break;
+                }
+              }
+            } catch (e) {}
+          }
+
+          var examData = '';
+          for (var j = 0; j < examUrls.length; j++) {
+            try {
+              var eUrl = examUrls[j];
+              if (eUrl.indexOf('/data') !== -1) {
+                var postE = await fetch(eUrl, {
+                  method: 'POST',
+                  credentials: 'include',
+                  headers: {
+                    'Accept': 'application/json, text/javascript, */*; q=0.01',
+                    'X-Requested-With': 'XMLHttpRequest'
+                  }
+                });
+                if (postE.ok) {
+                  var tE = await postE.text();
+                  if (tE && tE.length > 50) {
+                    examData = tE;
+                    break;
+                  }
+                }
+              }
+
+              var r2 = await fetch(eUrl, { credentials: 'include' });
+              if (r2.ok) {
+                var t2 = await r2.text();
+                if (t2 && t2.length > 50 && (t2.indexOf('exam') !== -1 || t2.indexOf('考试') !== -1 || t2.indexOf('table') !== -1 || t2.indexOf('data') !== -1)) {
+                  examData = t2;
+                  break;
+                }
+              }
+            } catch (e) {}
+          }
+
+          var gradeData = '';
+          for (var k = 0; k < gradeUrls.length; k++) {
+            try {
+              var gUrl = gradeUrls[k];
+              var gRes = await fetch(gUrl, {
+                credentials: 'include',
+                headers: {
+                  'Accept': '*/*',
+                  'X-Requested-With': 'XMLHttpRequest'
+                }
+              });
+              if (gRes.ok) {
+                var tG = await gRes.text();
+                if (tG && tG.length > 50 && (tG.indexOf('lnList') !== -1 || tG.indexOf('cjList') !== -1 || tG.indexOf('courseScore') !== -1 || tG.indexOf('table') !== -1)) {
+                  gradeData = tG;
+                  break;
+                }
+              }
+            } catch (e) {}
+          }
+
+          var evalData = '';
+          for (var ev = 0; ev < evalUrls.length; ev++) {
+            try {
+              var evUrl = evalUrls[ev];
+              var isSearch = evUrl.indexOf('search') !== -1;
+              var evResp = await fetch(evUrl, {
+                method: isSearch ? 'POST' : 'GET',
+                headers: {
+                  'Accept': 'application/json, text/javascript, */*; q=0.01',
+                  'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'include'
+              });
+              if (evResp.ok) {
+                var tEv = await evResp.text();
+                if (tEv && tEv.length > 30 && (tEv.indexOf('evaluationContent') !== -1 || tEv.indexOf('questionnaire') !== -1 || tEv.indexOf('data') !== -1)) {
+                  evalData = tEv;
+                  break;
+                }
+              }
+            } catch (e) {}
+          }
+
+          return JSON.stringify({
+            username: username,
+            schedule: scheduleData,
+            exam: examData,
+            grade: gradeData,
+            evaluation: evalData
+          });
+        })()
+        ''',
+      );
+
+      var cleanJson = jsProbeResult.toString();
+      if (cleanJson.startsWith('"') && cleanJson.endsWith('"')) {
+        cleanJson = jsonDecode(cleanJson) as String;
+      }
+      final dynamic parsedResult = jsonDecode(cleanJson);
+      if (parsedResult is Map<String, dynamic>) {
+        final uname = (parsedResult['username'] as String? ?? '').trim();
+        if (uname.isNotEmpty) {
+          _detectedUsername = uname;
+        }
+
+        final rawSched = (parsedResult['schedule'] as String? ?? '').trim();
+        if (rawSched.isNotEmpty) {
+          final probedCourses = const TimetableParser().parse(rawSched);
+          if (probedCourses.isNotEmpty) {
+            HbuUrpGateway.setProbedCourses(probedCourses);
+          }
+        }
+
+        final rawExam = (parsedResult['exam'] as String? ?? '').trim();
+        if (rawExam.isNotEmpty) {
+          final probedExams = const ExamParser().parse(rawExam);
+          if (probedExams.isNotEmpty) {
+            HbuUrpGateway.setProbedExams(probedExams);
+          }
+        }
+
+        final rawGrade = (parsedResult['grade'] as String? ?? '').trim();
+        if (rawGrade.isNotEmpty) {
+          final probedGrades = const GradeParser().parse(rawGrade);
+          if (probedGrades.isNotEmpty) {
+            HbuUrpGateway.setProbedGrades(probedGrades);
+          }
+        }
+
+        final rawEval = (parsedResult['evaluation'] as String? ?? '').trim();
+        if (rawEval.isNotEmpty) {
+          final probedEvals = const EvaluationParser().parseList(rawEval);
+          if (probedEvals.isNotEmpty) {
+            HbuUrpGateway.setProbedEvaluations(probedEvals);
+          }
+        }
+      }
+    } on Exception {
+      // 同源嗅探异常不影响主流程
     }
   }
 
@@ -582,17 +598,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             username: finalUsername,
           );
 
-      // 触发数据重新拉取，确保主界面即刻呈现最新课表、成绩与考试
-      await Future.wait([
-        ref
-            .read(timetableControllerProvider.notifier)
-            .loadTimetable(forceRefresh: true),
-        ref
-            .read(gradesControllerProvider.notifier)
-            .loadGrades(forceRefresh: true),
-        ref.read(examControllerProvider.notifier).loadExams(forceRefresh: true),
-        ref.read(evaluationControllerProvider.notifier).loadEvaluations(),
-      ]);
+      // 触发数据重新拉取，确保主界面即刻呈现最新课表、成绩与考试（限制等待3秒防止无网络阻塞退出）
+      try {
+        await Future.wait([
+          ref
+              .read(timetableControllerProvider.notifier)
+              .loadTimetable(forceRefresh: true),
+          ref
+              .read(gradesControllerProvider.notifier)
+              .loadGrades(forceRefresh: true),
+          ref.read(examControllerProvider.notifier).loadExams(forceRefresh: true),
+          ref.read(evaluationControllerProvider.notifier).loadEvaluations(),
+        ]).timeout(const Duration(seconds: 3));
+      } on Object catch (_) {
+        // 后台拉取超时或网络波动不阻塞页面关闭
+      }
 
       final probedCourseCount = HbuUrpGateway.cachedProbedCourses?.length ?? 0;
       final probedGradeCount = HbuUrpGateway.cachedProbedGrades?.length ?? 0;
@@ -643,26 +663,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
-  /// 用户点击悬浮按钮手动强制触发会话同步
+  /// 用户点击悬浮按钮手动强制触发会话同步并返回主界面
   Future<void> _manualSyncAndComplete() async {
     if (_isSyncing) return;
     setState(() {
-      _isSyncing = true;
-      _statusHint = '正在检查教务会话并同步数据...';
+      _statusHint = '正在提取教务数据并同步...';
     });
-    try {
-      if (_controller != null) {
-        final curUrl = await _controller!.currentUrl() ?? '';
-        await _handlePageFinished(curUrl);
-      }
-      await _syncSessionAndComplete(probedUsername: _detectedUsername);
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSyncing = false;
-        });
-      }
-    }
+    // 强制执行一次同源嗅探提取当前页面及系统的数据
+    await _performUrpProbe();
+    // 执行会话同步与持久化，关闭登录页返回主应用
+    await _syncSessionAndComplete(probedUsername: _detectedUsername);
   }
 
   /// 刷新页面
@@ -722,10 +732,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               ),
               label: Text(
                 _isUrpDetected
-                    ? '已就绪，立即同步并进入 App'
+                    ? '已就绪，立即同步并返回'
                     : (_isPortalDetected
                         ? '进入「本科教务学生端」 ➔'
-                        : '已进入教务系统？点击同步'),
+                        : '已进入教务系统？立即同步并返回'),
               ),
               backgroundColor: _isUrpDetected
                   ? scheme.primary
